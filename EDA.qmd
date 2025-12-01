@@ -6,4 +6,6 @@ editor: visual
 
 ## EDA
 
-### \[Click here for modeling page\](<https://benmellinncsu.github.io/project-3/modeling.html>)
+### Modeling Page
+
+\[Click here for modeling page\](<https://benmellinncsu.github.io/project-3/modeling.html>)
