@@ -20,6 +20,40 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -92,10 +126,402 @@ ul.task-list li input[type="checkbox"] {
 
 <section id="eda" class="level2">
 <h2 class="anchored" data-anchor-id="eda">EDA</h2>
-<p>Test</p>
-<section id="modeling-page" class="level3">
-<h3 class="anchored" data-anchor-id="modeling-page">Modeling Page</h3>
-<p>[Click here for modeling page](<a href="https://benmellinncsu.github.io/project-3/modeling.html" class="uri">https://benmellinncsu.github.io/project-3/modeling.html</a>)</p>
+<section id="introduction" class="level3">
+<h3 class="anchored" data-anchor-id="introduction">Introduction</h3>
+<ul>
+<li><p>I will be working with the <a href="https://www.kaggle.com/datasets/alexteboul/diabetes-health-indicators-dataset?resource=download">diabetes data set</a> from kaggle.</p></li>
+<li><p>My goal will be to make predictions about if an individual has diabetes/prediabetes based on predictors that are related to that individual’s lifestyle.</p></li>
+<li><p>This document will be exploring the data.</p></li>
+<li><p>I will be ignoring medical predictors, like blood pressure or cholesterol level.</p></li>
+<li><p>Here are the final list of predictors I will be using:</p>
+<ul>
+<li><p>If the person has smoked 100 cigarettes in their lifetime</p></li>
+<li><p>If they had physical activity in the last 30 days</p></li>
+<li><p>If they consume 1 or more fruit per day</p></li>
+<li><p>If they consume 1 or more vegetable in the past day</p></li>
+<li><p>If they are heavy alcohol drinkers</p></li>
+<li><p>Age</p></li>
+<li><p>Education</p></li>
+<li><p>Income<br>
+</p></li>
+</ul></li>
+</ul>
+</section>
+<section id="load-data" class="level3">
+<h3 class="anchored" data-anchor-id="load-data">Load Data</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"../diabetes_binary_health_indicators_BRFSS2015.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 253680 Columns: 22
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+dbl (22): Diabetes_binary, HighBP, HighChol, CholCheck, BMI, Smoker, Stroke,...
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 22
+  Diabetes_binary HighBP HighChol CholCheck   BMI Smoker Stroke
+            &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
+1               0      1        1         1    40      1      0
+2               0      0        0         0    25      1      0
+3               0      1        1         1    28      0      0
+4               0      1        0         1    27      0      0
+5               0      1        1         1    24      0      0
+6               0      1        1         1    25      1      0
+# ℹ 15 more variables: HeartDiseaseorAttack &lt;dbl&gt;, PhysActivity &lt;dbl&gt;,
+#   Fruits &lt;dbl&gt;, Veggies &lt;dbl&gt;, HvyAlcoholConsump &lt;dbl&gt;, AnyHealthcare &lt;dbl&gt;,
+#   NoDocbcCost &lt;dbl&gt;, GenHlth &lt;dbl&gt;, MentHlth &lt;dbl&gt;, PhysHlth &lt;dbl&gt;,
+#   DiffWalk &lt;dbl&gt;, Sex &lt;dbl&gt;, Age &lt;dbl&gt;, Education &lt;dbl&gt;, Income &lt;dbl&gt;</code></pre>
+</div>
+</div>
+</section>
+<section id="check-out-data" class="level3">
+<h3 class="anchored" data-anchor-id="check-out-data">Check out data</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">#dimensions</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 253680     22</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># na data</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">colSums</span>(<span class="fu">is.na</span>(data))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     Diabetes_binary               HighBP             HighChol 
+                   0                    0                    0 
+           CholCheck                  BMI               Smoker 
+                   0                    0                    0 
+              Stroke HeartDiseaseorAttack         PhysActivity 
+                   0                    0                    0 
+              Fruits              Veggies    HvyAlcoholConsump 
+                   0                    0                    0 
+       AnyHealthcare          NoDocbcCost              GenHlth 
+                   0                    0                    0 
+            MentHlth             PhysHlth             DiffWalk 
+                   0                    0                    0 
+                 Sex                  Age            Education 
+                   0                    0                    0 
+              Income 
+                   0 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># look at unique values</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">lapply</span>(data, unique)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$Diabetes_binary
+[1] 0 1
+
+$HighBP
+[1] 1 0
+
+$HighChol
+[1] 1 0
+
+$CholCheck
+[1] 1 0
+
+$BMI
+ [1] 40 25 28 27 24 30 34 26 33 21 23 22 38 32 37 31 29 20 35 45 39 19 47 18 36
+[26] 43 55 49 42 17 16 41 44 50 59 48 52 46 54 57 53 14 15 51 58 63 61 56 74 62
+[51] 64 66 73 85 60 67 65 70 82 79 92 68 72 88 96 13 81 71 75 12 77 69 76 87 89
+[76] 84 95 98 91 86 83 80 90 78
+
+$Smoker
+[1] 1 0
+
+$Stroke
+[1] 0 1
+
+$HeartDiseaseorAttack
+[1] 0 1
+
+$PhysActivity
+[1] 0 1
+
+$Fruits
+[1] 0 1
+
+$Veggies
+[1] 1 0
+
+$HvyAlcoholConsump
+[1] 0 1
+
+$AnyHealthcare
+[1] 1 0
+
+$NoDocbcCost
+[1] 0 1
+
+$GenHlth
+[1] 5 3 2 4 1
+
+$MentHlth
+ [1] 18  0 30  3  5 15 10  6 20  2 25  1  4  7  8 21 14 26 29 16 28 11 12 24 17
+[26] 13 27 19 22  9 23
+
+$PhysHlth
+ [1] 15  0 30  2 14 28  7 20  3 10  1  5 17  4 19  6 12 25 27 21 22  8 29 24  9
+[26] 16 18 23 13 26 11
+
+$DiffWalk
+[1] 1 0
+
+$Sex
+[1] 0 1
+
+$Age
+ [1]  9  7 11 10  8 13  4  6  2 12  5  1  3
+
+$Education
+[1] 4 6 3 5 2 1
+
+$Income
+[1] 3 1 8 6 4 7 2 5</code></pre>
+</div>
+</div>
+<p>No missing data.</p>
+</section>
+<section id="build-final-data-set" class="level3">
+<h3 class="anchored" data-anchor-id="build-final-data-set">Build final data set</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'dplyr'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:stats':
+
+    filter, lag</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:base':
+
+    intersect, setdiff, setequal, union</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>data_subset <span class="ot">&lt;-</span> data <span class="sc">|&gt;</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(Diabetes_binary, Smoker, PhysActivity, Fruits, Veggies,</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>         HvyAlcoholConsump, Sex, Education, Income)</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Check the result</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(data_subset)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 9
+  Diabetes_binary Smoker PhysActivity Fruits Veggies HvyAlcoholConsump   Sex
+            &lt;dbl&gt;  &lt;dbl&gt;        &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;             &lt;dbl&gt; &lt;dbl&gt;
+1               0      1            0      0       1                 0     0
+2               0      1            1      0       0                 0     0
+3               0      0            0      1       0                 0     0
+4               0      0            1      1       1                 0     0
+5               0      0            1      1       1                 0     0
+6               0      1            1      1       1                 0     1
+# ℹ 2 more variables: Education &lt;dbl&gt;, Income &lt;dbl&gt;</code></pre>
+</div>
+</div>
+</section>
+<section id="convert-to-factors" class="level3">
+<h3 class="anchored" data-anchor-id="convert-to-factors">Convert to factors</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>data_subset <span class="ot">&lt;-</span> data_subset <span class="sc">|&gt;</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">Diabetes_binary   =</span> <span class="fu">factor</span>(Diabetes_binary, <span class="at">levels =</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">1</span>), <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"No"</span>, <span class="st">"Yes"</span>)),</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">Smoker            =</span> <span class="fu">factor</span>(Smoker, <span class="at">levels =</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">1</span>), <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"No"</span>, <span class="st">"Yes"</span>)),</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">PhysActivity      =</span> <span class="fu">factor</span>(PhysActivity, <span class="at">levels =</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">1</span>), <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"No"</span>, <span class="st">"Yes"</span>)),</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">Fruits            =</span> <span class="fu">factor</span>(Fruits, <span class="at">levels =</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">1</span>), <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"No"</span>, <span class="st">"Yes"</span>)),</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">Veggies           =</span> <span class="fu">factor</span>(Veggies, <span class="at">levels =</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">1</span>), <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"No"</span>, <span class="st">"Yes"</span>)),</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">HvyAlcoholConsump =</span> <span class="fu">factor</span>(HvyAlcoholConsump, <span class="at">levels =</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">1</span>), <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"No"</span>, <span class="st">"Yes"</span>)),</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">Sex               =</span> <span class="fu">factor</span>(Sex, <span class="at">levels =</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">1</span>), <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"Male"</span>, <span class="st">"Female"</span>)),</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">Education         =</span> <span class="fu">as.factor</span>(Education),</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">Income            =</span> <span class="fu">as.factor</span>(Income)</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Check structure</span></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(data_subset)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>tibble [253,680 × 9] (S3: tbl_df/tbl/data.frame)
+ $ Diabetes_binary  : Factor w/ 2 levels "No","Yes": 1 1 1 1 1 1 1 1 2 1 ...
+ $ Smoker           : Factor w/ 2 levels "No","Yes": 2 2 1 1 1 2 2 2 2 1 ...
+ $ PhysActivity     : Factor w/ 2 levels "No","Yes": 1 2 1 2 2 2 1 2 1 1 ...
+ $ Fruits           : Factor w/ 2 levels "No","Yes": 1 1 2 2 2 2 1 1 2 1 ...
+ $ Veggies          : Factor w/ 2 levels "No","Yes": 2 1 1 2 2 2 1 2 2 2 ...
+ $ HvyAlcoholConsump: Factor w/ 2 levels "No","Yes": 1 1 1 1 1 1 1 1 1 1 ...
+ $ Sex              : Factor w/ 2 levels "Male","Female": 1 1 1 1 1 2 1 1 1 2 ...
+ $ Education        : Factor w/ 6 levels "1","2","3","4",..: 4 6 4 3 5 6 6 4 5 4 ...
+ $ Income           : Factor w/ 8 levels "1","2","3","4",..: 3 1 8 6 4 8 7 4 1 3 ...</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(data_subset)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> Diabetes_binary Smoker       PhysActivity Fruits       Veggies     
+ No :218334      No :141257   No : 61760   No : 92782   No : 47839  
+ Yes: 35346      Yes:112423   Yes:191920   Yes:160898   Yes:205841  
+                                                                    
+                                                                    
+                                                                    
+                                                                    
+                                                                    
+ HvyAlcoholConsump     Sex         Education      Income     
+ No :239424        Male  :141974   1:   174   8      :90385  
+ Yes: 14256        Female:111706   2:  4043   7      :43219  
+                                   3:  9478   6      :36470  
+                                   4: 62750   5      :25883  
+                                   5: 69910   4      :20135  
+                                   6:107325   3      :15994  
+                                              (Other):21594  </code></pre>
+</div>
+</div>
+</section>
+<section id="look-at-relationships-between-variables" class="level3">
+<h3 class="anchored" data-anchor-id="look-at-relationships-between-variables">Look at relationships between variables</h3>
+<p>I will create contingency tables between the variables and diabetes_binary.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (col <span class="cf">in</span> <span class="fu">names</span>(data_subset)) {</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (col <span class="sc">!=</span> <span class="st">"Diabetes_binary"</span>) {</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st"> Contingency table:"</span>, col, <span class="st">"vs Diabetes_binary"</span>)</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">print</span>(<span class="fu">table</span>(data_subset[[col]], data_subset<span class="sc">$</span>Diabetes_binary))</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+ Contingency table: Smoker vs Diabetes_binary     
+          No    Yes
+  No  124228  17029
+  Yes  94106  18317
+
+ Contingency table: PhysActivity vs Diabetes_binary     
+          No    Yes
+  No   48701  13059
+  Yes 169633  22287
+
+ Contingency table: Fruits vs Diabetes_binary     
+          No    Yes
+  No   78129  14653
+  Yes 140205  20693
+
+ Contingency table: Veggies vs Diabetes_binary     
+          No    Yes
+  No   39229   8610
+  Yes 179105  26736
+
+ Contingency table: HvyAlcoholConsump vs Diabetes_binary     
+          No    Yes
+  No  204910  34514
+  Yes  13424    832
+
+ Contingency table: Sex vs Diabetes_binary        
+             No    Yes
+  Male   123563  18411
+  Female  94771  16935
+
+ Contingency table: Education vs Diabetes_binary   
+       No   Yes
+  1   127    47
+  2  2860  1183
+  3  7182  2296
+  4 51684 11066
+  5 59556 10354
+  6 96925 10400
+
+ Contingency table: Income vs Diabetes_binary   
+       No   Yes
+  1  7428  2383
+  2  8697  3086
+  3 12426  3568
+  4 16081  4054
+  5 21379  4504
+  6 31179  5291
+  7 37954  5265
+  8 83190  7195</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Look at percentages</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (col <span class="cf">in</span> <span class="fu">names</span>(data_subset)) {</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (col <span class="sc">!=</span> <span class="st">"Diabetes_binary"</span>) {</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">--- Contingency table (percentages):"</span>, col, <span class="st">"vs Diabetes_binary ---</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>    tbl <span class="ot">&lt;-</span> <span class="fu">table</span>(data_subset[[col]], data_subset<span class="sc">$</span>Diabetes_binary)</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>    tbl_pct <span class="ot">&lt;-</span> <span class="fu">prop.table</span>(tbl, <span class="at">margin =</span> <span class="dv">1</span>) <span class="sc">*</span> <span class="dv">100</span></span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Round</span></span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">print</span>(<span class="fu">round</span>(tbl_pct, <span class="dv">1</span>))</span>
+<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+--- Contingency table (percentages): Smoker vs Diabetes_binary ---
+     
+        No  Yes
+  No  87.9 12.1
+  Yes 83.7 16.3
+
+--- Contingency table (percentages): PhysActivity vs Diabetes_binary ---
+     
+        No  Yes
+  No  78.9 21.1
+  Yes 88.4 11.6
+
+--- Contingency table (percentages): Fruits vs Diabetes_binary ---
+     
+        No  Yes
+  No  84.2 15.8
+  Yes 87.1 12.9
+
+--- Contingency table (percentages): Veggies vs Diabetes_binary ---
+     
+      No Yes
+  No  82  18
+  Yes 87  13
+
+--- Contingency table (percentages): HvyAlcoholConsump vs Diabetes_binary ---
+     
+        No  Yes
+  No  85.6 14.4
+  Yes 94.2  5.8
+
+--- Contingency table (percentages): Sex vs Diabetes_binary ---
+        
+           No  Yes
+  Male   87.0 13.0
+  Female 84.8 15.2
+
+--- Contingency table (percentages): Education vs Diabetes_binary ---
+   
+      No  Yes
+  1 73.0 27.0
+  2 70.7 29.3
+  3 75.8 24.2
+  4 82.4 17.6
+  5 85.2 14.8
+  6 90.3  9.7
+
+--- Contingency table (percentages): Income vs Diabetes_binary ---
+   
+      No  Yes
+  1 75.7 24.3
+  2 73.8 26.2
+  3 77.7 22.3
+  4 79.9 20.1
+  5 82.6 17.4
+  6 85.5 14.5
+  7 87.8 12.2
+  8 92.0  8.0</code></pre>
+</div>
+</div>
+<p>Based on the percentages, I learned that there are relationships between all variables and whether or not someone has diabetes. in each case, the difference is relatively small, but I’m hoping that the cumulative effect of them will be enough to make predictions.</p>
+<p>Notably, the greater your income and education level, the less likely you are to have diabetes.</p>
+<p>Furthermore, classic lifestyle advice, like eating fruits, veggies, and getting physical activity is associated with a decreased likelihood of diabetes.</p>
+<p>Next, take a look at my modeling page to see how I model the data.</p>
+</section>
+<section id="click-here-for-modeling-page" class="level3">
+<h3 class="anchored" data-anchor-id="click-here-for-modeling-page"><a href="https://benmellinncsu.github.io/project-3/modeling.html">Click Here for Modeling Page</a></h3>
 
 
 </section>
