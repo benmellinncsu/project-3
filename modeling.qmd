@@ -6,4 +6,4 @@ editor: visual
 
 ## Modeling
 
-### Click here for EDA page
+### \[Click here for EDA page\]()
