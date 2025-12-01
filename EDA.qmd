@@ -12,6 +12,8 @@ editor: visual
 
 -   My goal will be to make predictions about if an individual has diabetes/prediabetes based on predictors that are related to that individual's lifestyle.
 
+-   This document will be exploring the data.
+
 -   I will be ignoring medical predictors, like blood pressure or cholesterol level.
 
 -   Here are the final list of predictors I will be using:
@@ -49,6 +51,8 @@ head(data)
 dim(data)
 # na data
 colSums(is.na(data))
+# look at unique values
+lapply(data, unique)
 ```
 
 No missing data.

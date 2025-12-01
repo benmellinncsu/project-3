@@ -6,6 +6,34 @@ editor: visual
 
 ## Modeling
 
+### Introduction
+
+-   I will be working with the [diabetes data set](https://www.kaggle.com/datasets/alexteboul/diabetes-health-indicators-dataset?resource=download) from kaggle.
+
+-   My goal will be to make predictions about if an individual has diabetes/prediabetes based on predictors that are related to that individual's lifestyle.
+
+-   This document will be modeling the data with a classification tree and random forest.
+
+-   I will be ignoring medical predictors, like blood pressure or cholesterol level.
+
+-   Here are the final list of predictors I will be using:
+
+    -   If the person has smoked 100 cigarettes in their lifetime
+
+    -   If they had physical activity in the last 30 days
+
+    -   If they consume 1 or more fruit per day
+
+    -   If they consume 1 or more vegetable in the past day
+
+    -   If they are heavy alcohol drinkers
+
+    -   Age
+
+    -   Education
+
+    -   Income
+
 ### Prepare dataset for modeling
 
 ```{r}
@@ -36,5 +64,207 @@ data_subset <- data_subset |>
   )
 
 ```
+
+### Splitting
+
+```{r}
+library(tidymodels)
+set.seed(222)
+# Put 70% of the data into the training set 
+data_split <- initial_split(data_subset, prop = .7)
+
+# Create data frames for the two sets:
+train_data <- training(data_split)
+test_data  <- testing(data_split)
+
+
+#check
+dim(test_data)
+dim(train_data)
+```
+
+### Cross validation
+
+```{r}
+
+set.seed(222)
+folds <- vfold_cv(train_data, v = 5)
+
+```
+
+### Classification Tree
+
+The classification tree is a greedy algorithm that predicts a categorical label, in this case that label is whether someone has diabetes/prediabetes or not.
+
+-   The algorithm iteratively splits the data based on the "best" feature. The "best" feature is the feature that maximizes the "purity" of the resulting groups, or that keeps the resulting groups as homogeneous as possible.
+
+-   To split the data, the algorithm divides the data into subsets based on values of the predictor variable.
+
+-   This process is repeated until a desired tree size is reached.
+
+-   To classify a new instance, simply start at the trees root, and follow the nodes down until a leaf is reached.
+
+```{r}
+
+set.seed(222)
+
+#specify the model
+
+tune_spec <- decision_tree(
+  cost_complexity = tune(),  
+  tree_depth = NULL          
+) |>
+  set_engine("rpart") %>%
+  set_mode("classification")
+
+tree_grid <- tibble(
+  cost_complexity = c(0, 0.001, 0.01, 0.05, 0.1)
+)
+
+set.seed(222)
+tree_wf <- workflow() |>
+  add_model(tune_spec) |>
+  add_formula(Diabetes_binary ~ .)
+
+tree_res <- 
+  tree_wf |> 
+  tune_grid(
+    resamples = folds,
+    grid = tree_grid,
+    metrics = metric_set(mn_log_loss)
+    )
+
+tree_res
+```
+
+```{r}
+## View results
+
+
+logloss_results <- tree_res %>%
+  collect_metrics() %>%
+  filter(.metric == "mn_log_loss") 
+
+print(logloss_results)
+
+
+```
+
+Seems like the tree with 0 as a value of cost complexity did the best. We want to minimize log loss.
+
+```{r}
+## Select the best tree
+best_tree <- tree_res %>%
+  select_best(metric = "mn_log_loss")
+
+best_tree
+
+##Finalize workflow
+
+final_tree_wf <- 
+  tree_wf %>% 
+  finalize_workflow(best_tree)
+
+final_tree_wf
+```
+
+### Random Forest
+
+Random forests are similar to decision trees, except they rely on many trained decision trees. Each individual decision tree is built on a random subset of the predictors. Predictions are made based on voting from the subset of decision trees, which can make it less prone to overfitting and more stable compared to a basic, simple tree.
+
+```{r}
+library(ranger)
+
+set.seed(222)
+
+# Specify the model
+rf_spec <- rand_forest(
+  mtry = tune(),      
+  trees = 50,        
+  min_n = 5    ## make the fitting time faster       
+) |>
+  set_engine("ranger", num.threads = parallel::detectCores()) |>
+  set_mode("classification")
+
+
+rf_grid <- tibble(
+  mtry = c(2, 4, 6, 8) 
+)
+
+set.seed(222)
+rf_wf <- workflow() |>
+  add_model(rf_spec) |>
+  add_formula(Diabetes_binary ~ .)
+
+rf_res <-
+  rf_wf |>
+  tune_grid(
+    resamples = folds,
+    grid = rf_grid,
+    metrics = metric_set(mn_log_loss)
+  )
+
+rf_res
+```
+
+```{r}
+rf_logloss_results <- rf_res %>%
+  collect_metrics() %>%
+  filter(.metric == "mn_log_loss") 
+
+print(rf_logloss_results)
+```
+
+```{r}
+## Select the best forest
+best_rf <- rf_res %>%
+  select_best(metric = "mn_log_loss")
+
+best_rf
+
+##Finalize workflow
+
+final_rf_wf <- 
+  rf_wf %>% 
+  finalize_workflow(best_rf)
+
+final_rf_wf
+```
+
+The best random forest model only used 2 predictors for the mtry hyperparameter.
+
+### Final Model selection
+
+```{r}
+
+final_rf_fit <- final_rf_wf |>
+  last_fit(split = data_split,
+           metrics = metric_set(mn_log_loss))
+
+final_tree_fit <- final_tree_wf |>
+  last_fit(split = data_split,
+           metrics = metric_set(mn_log_loss))
+```
+
+```{r}
+
+# RF
+rf_log_loss <- final_rf_fit |>
+  collect_metrics() |>
+  filter(.metric == "mn_log_loss")
+
+# DTree
+tree_log_loss <- final_tree_fit |>
+  collect_metrics() |>
+  filter(.metric == "mn_log_loss")
+
+# 
+print("RF log loss")
+rf_log_loss
+print("Tree log loss")
+tree_log_loss
+```
+
+RF has lower log loss, but not by much. We will use random forest.
 
 ### [Click here for the EDA page](https://benmellinncsu.github.io/project-3/EDA.html)
