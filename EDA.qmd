@@ -6,6 +6,132 @@ editor: visual
 
 ## EDA
 
-### Modeling Page
+### Introduction
 
-\[Click here for modeling page\](<https://benmellinncsu.github.io/project-3/modeling.html>)
+-   I will be working with the [diabetes data set](https://www.kaggle.com/datasets/alexteboul/diabetes-health-indicators-dataset?resource=download) from kaggle.
+
+-   My goal will be to make predictions about if an individual has diabetes/prediabetes based on predictors that are related to that individual's lifestyle.
+
+-   I will be ignoring medical predictors, like blood pressure or cholesterol level.
+
+-   Here are the final list of predictors I will be using:
+
+    -   If the person has smoked 100 cigarettes in their lifetime
+
+    -   If they had physical activity in the last 30 days
+
+    -   If they consume 1 or more fruit per day
+
+    -   If they consume 1 or more vegetable in the past day
+
+    -   If they are heavy alcohol drinkers
+
+    -   Age
+
+    -   Education
+
+    -   Income\
+
+### Load Data
+
+```{r}
+library(readr)
+
+data <- read_csv("../diabetes_binary_health_indicators_BRFSS2015.csv")
+head(data)
+
+```
+
+### Check out data
+
+```{r}
+#dimensions
+dim(data)
+# na data
+colSums(is.na(data))
+```
+
+No missing data.
+
+### Build final data set
+
+```{r}
+library(dplyr)
+
+data_subset <- data |>
+  select(Diabetes_binary, Smoker, PhysActivity, Fruits, Veggies,
+         HvyAlcoholConsump, Sex, Education, Income)
+
+# Check the result
+head(data_subset)
+
+```
+
+### Convert to factors
+
+```{r}
+
+
+data_subset <- data_subset |>
+  mutate(
+    Diabetes_binary   = factor(Diabetes_binary, levels = c(0,1), labels = c("No", "Yes")),
+    Smoker            = factor(Smoker, levels = c(0,1), labels = c("No", "Yes")),
+    PhysActivity      = factor(PhysActivity, levels = c(0,1), labels = c("No", "Yes")),
+    Fruits            = factor(Fruits, levels = c(0,1), labels = c("No", "Yes")),
+    Veggies           = factor(Veggies, levels = c(0,1), labels = c("No", "Yes")),
+    HvyAlcoholConsump = factor(HvyAlcoholConsump, levels = c(0,1), labels = c("No", "Yes")),
+    Sex               = factor(Sex, levels = c(0,1), labels = c("Male", "Female")),
+    Education         = as.factor(Education),
+    Income            = as.factor(Income)
+  )
+
+# Check structure
+str(data_subset)
+summary(data_subset)
+
+```
+
+### Look at relationships between variables
+
+I will create contingency tables between the variables and diabetes_binary.
+
+```{r}
+
+for (col in names(data_subset)) {
+  if (col != "Diabetes_binary") {
+    cat("\n Contingency table:", col, "vs Diabetes_binary")
+    print(table(data_subset[[col]], data_subset$Diabetes_binary))
+  }
+}
+
+```
+
+```{r}
+## Look at percentages
+
+for (col in names(data_subset)) {
+  if (col != "Diabetes_binary") {
+    cat("\n--- Contingency table (percentages):", col, "vs Diabetes_binary ---\n")
+    
+   
+    tbl <- table(data_subset[[col]], data_subset$Diabetes_binary)
+    
+    
+    tbl_pct <- prop.table(tbl, margin = 1) * 100
+    
+    # Round
+    print(round(tbl_pct, 1))
+  }
+}
+
+```
+
+Based on the percentages, I learned that there are relationships between all variables and whether or not someone has diabetes. in each case, the difference is relatively small, but I'm hoping that the cumulative effect of them will be enough to make predictions.
+
+Notably, the greater your income and education level, the less likely you are to have diabetes.
+
+Furthermore, classic lifestyle advice, like eating fruits, veggies, and getting physical activity is associated with a decreased likelihood of diabetes.
+
+Next, take a look at my modeling page to see how I model the data.
+
+### [Click Here for Modeling Page](https://benmellinncsu.github.io/project-3/modeling.html)

@@ -6,6 +6,35 @@ editor: visual
 
 ## Modeling
 
-### EDA Page
+### Prepare dataset for modeling
 
-\[Click here for EDA page\](<https://benmellinncsu.github.io/project-3/EDA.html>)
+```{r}
+
+library(readr)
+library(dplyr)
+
+#load the data
+data <- read_csv("../diabetes_binary_health_indicators_BRFSS2015.csv")
+
+# subset only the relevant predictors
+data_subset <- data |>
+  select(Diabetes_binary, Smoker, PhysActivity, Fruits, Veggies,
+         HvyAlcoholConsump, Sex, Education, Income)
+
+#convert all features to factors
+data_subset <- data_subset |>
+  mutate(
+    Diabetes_binary   = factor(Diabetes_binary, levels = c(0,1), labels = c("No", "Yes")),
+    Smoker            = factor(Smoker, levels = c(0,1), labels = c("No", "Yes")),
+    PhysActivity      = factor(PhysActivity, levels = c(0,1), labels = c("No", "Yes")),
+    Fruits            = factor(Fruits, levels = c(0,1), labels = c("No", "Yes")),
+    Veggies           = factor(Veggies, levels = c(0,1), labels = c("No", "Yes")),
+    HvyAlcoholConsump = factor(HvyAlcoholConsump, levels = c(0,1), labels = c("No", "Yes")),
+    Sex               = factor(Sex, levels = c(0,1), labels = c("Male", "Female")),
+    Education         = as.factor(Education),
+    Income            = as.factor(Income)
+  )
+
+```
+
+### [Click here for the EDA page](https://benmellinncsu.github.io/project-3/EDA.html)
