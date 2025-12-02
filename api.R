@@ -8,7 +8,7 @@ library(yardstick)
 
 #Read in the data
 
-data <- read_csv("../diabetes_binary_health_indicators_BRFSS2015.csv")
+data <- read_csv("diabetes_binary_health_indicators_BRFSS2015.csv")
 
 # subset only the relevant predictors
 data_subset <- data |>
@@ -109,6 +109,7 @@ function() {
     site_url = "https://benmellinncsu.github.io/project-3/EDA.html" 
   )}
 
+#http://localhost:8000/info
 
 #* Confusion matrix heatmap
 #* @serializer png

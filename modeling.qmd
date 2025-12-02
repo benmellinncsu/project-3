@@ -42,7 +42,7 @@ library(readr)
 library(dplyr)
 
 #load the data
-data <- read_csv("../diabetes_binary_health_indicators_BRFSS2015.csv")
+data <- read_csv("diabetes_binary_health_indicators_BRFSS2015.csv")
 
 # subset only the relevant predictors
 data_subset <- data |>
