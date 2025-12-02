@@ -265,6 +265,41 @@ print("Tree log loss")
 tree_log_loss
 ```
 
-RF has lower log loss, but not by much. We will use random forest.
+RF has lower log loss, but not by much.
+
+```{r}
+
+# Random forest predictions
+rf_preds <- final_rf_fit |> collect_predictions()
+
+# Convert probabilities to predicted class
+rf_preds <- rf_preds %>%
+  mutate(.pred_class = ifelse(.pred_Yes > 0.5, 1, 0))  # 1 = Yes, 0 = No
+
+# Count number of 0s and 1s
+rf_counts <- rf_preds %>%
+  count(.pred_class)
+
+print("Random Forest predicted counts:")
+print(rf_counts)
+
+# Tree predictions
+tree_preds <- final_tree_fit |> collect_predictions()
+
+tree_preds <- tree_preds %>%
+  mutate(.pred_class = ifelse(.pred_Yes > 0.5, 1, 0))
+
+tree_counts <- tree_preds %>%
+  count(.pred_class)
+
+print("Tree predicted counts:")
+print(tree_counts)
+```
+
+-   Interestingly, random forest only really predicts 0s on the test set. It is able to minimize log loss by predicting that nobody has diabetes. The decision tree, on teh other hand, does predict that some people have diabetes.
+
+-   This makes sense, since the dataset is so imbalanced.
+
+-   Although random forest had a slightly lower log loss, I am going to use the decision tree model instead. The values of log_loss were extremely close and the decision tree model doesn't predict entirely a single class. I will therefore be using it in the API endpoint.
 
 ### [Click here for the EDA page](https://benmellinncsu.github.io/project-3/EDA.html)

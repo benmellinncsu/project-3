@@ -514,7 +514,57 @@ Computational engine: ranger </code></pre>
 1 mn_log_loss binary         0.387 pre0_mod0_post0</code></pre>
 </div>
 </div>
-<p>RF has lower log loss, but not by much. We will use random forest.</p>
+<p>RF has lower log loss, but not by much.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Random forest predictions</span></span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>rf_preds <span class="ot">&lt;-</span> final_rf_fit <span class="sc">|&gt;</span> <span class="fu">collect_predictions</span>()</span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert probabilities to predicted class</span></span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>rf_preds <span class="ot">&lt;-</span> rf_preds <span class="sc">%&gt;%</span></span>
+<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">.pred_class =</span> <span class="fu">ifelse</span>(.pred_Yes <span class="sc">&gt;</span> <span class="fl">0.5</span>, <span class="dv">1</span>, <span class="dv">0</span>))  <span class="co"># 1 = Yes, 0 = No</span></span>
+<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-8"><a href="#cb43-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Count number of 0s and 1s</span></span>
+<span id="cb43-9"><a href="#cb43-9" aria-hidden="true" tabindex="-1"></a>rf_counts <span class="ot">&lt;-</span> rf_preds <span class="sc">%&gt;%</span></span>
+<span id="cb43-10"><a href="#cb43-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(.pred_class)</span>
+<span id="cb43-11"><a href="#cb43-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-12"><a href="#cb43-12" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="st">"Random Forest predicted counts:"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Random Forest predicted counts:"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(rf_counts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 2
+  .pred_class     n
+        &lt;dbl&gt; &lt;int&gt;
+1           0 76104</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Tree predictions</span></span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>tree_preds <span class="ot">&lt;-</span> final_tree_fit <span class="sc">|&gt;</span> <span class="fu">collect_predictions</span>()</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>tree_preds <span class="ot">&lt;-</span> tree_preds <span class="sc">%&gt;%</span></span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">.pred_class =</span> <span class="fu">ifelse</span>(.pred_Yes <span class="sc">&gt;</span> <span class="fl">0.5</span>, <span class="dv">1</span>, <span class="dv">0</span>))</span>
+<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a>tree_counts <span class="ot">&lt;-</span> tree_preds <span class="sc">%&gt;%</span></span>
+<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(.pred_class)</span>
+<span id="cb47-9"><a href="#cb47-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-10"><a href="#cb47-10" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="st">"Tree predicted counts:"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Tree predicted counts:"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(tree_counts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2 × 2
+  .pred_class     n
+        &lt;dbl&gt; &lt;int&gt;
+1           0 75985
+2           1   119</code></pre>
+</div>
+</div>
+<ul>
+<li><p>Interestingly, random forest only really predicts 0s on the test set. It is able to minimize log loss by predicting that nobody has diabetes. The decision tree, on teh other hand, does predict that some people have diabetes.</p></li>
+<li><p>This makes sense, since the dataset is so imbalanced.</p></li>
+<li><p>Although random forest had a slightly lower log loss, I am going to use the decision tree model instead. The values of log_loss were extremely close and the decision tree model doesn’t predict entirely a single class. I will therefore be using it in the API endpoint.</p></li>
+</ul>
 </section>
 <section id="click-here-for-the-eda-page" class="level3">
 <h3 class="anchored" data-anchor-id="click-here-for-the-eda-page"><a href="https://benmellinncsu.github.io/project-3/EDA.html">Click here for the EDA page</a></h3>
